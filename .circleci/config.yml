@@ -16,14 +16,21 @@ jobs:
           name: Run unit tests
           command: yarn test
 
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+
   build_and_run_e2e_tests:
-    executor: node/default
+    machine:
+      image: ubuntu-2004:202010-01
+    resource_class: medium
     steps:
       - run:
           name: Docker install
           command: |
             sudo apt-get update
-            sudo apt install docker.io
+            sudo apt install docker.io -y
             docker -v
 
       - run:
@@ -31,18 +38,33 @@ jobs:
           command: |
             sudo docker run -d -p 27017:27017 --name:mongo mongo
 
-      - checkout
-      - node/install-packages:
-          pkg-manager: yarn
+      - run:
+          name: install git
+          command: sudo apt install git -y
+
+      - run:
+          name: install node
+          command: |
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+            source ~/.bashrc
+            nvm install v16 --lts
+            node -v
+            npm -v
+
+      - run:
+          name: checkout code
+          command: |
+            cd ~
+            mkdir project 
+            cd project
+            git clone "https://github.com/smiley-geek/nestjs-tests"
 
       - run:
           name: Run e2e tests
-          command: yarn test:e2e
-
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - .
+          command: |
+            cd ~/project/nestjs-tests
+            yarn test:e2e
 
   deploy:
     executor: heroku/default
