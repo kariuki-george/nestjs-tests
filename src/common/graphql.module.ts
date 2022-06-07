@@ -10,7 +10,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
       autoSchemaFile: './schema.qll',
       debug: true,
       playground: true,
-      introspection:true,
+      introspection: true,
       driver: ApolloDriver,
       //plugins: [ApolloServerPluginLandingPageLocalDefault],
     }),
