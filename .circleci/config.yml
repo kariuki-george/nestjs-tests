@@ -4,19 +4,72 @@ orbs:
   heroku: circleci/heroku@1.2.6
 
 jobs:
-  build_and_test:
+  build_and_run_unit_tests:
     executor: node/default
     steps:
       - checkout
+
       - node/install-packages:
           pkg-manager: yarn
+
+      - run:
+          name: switch to current branch
+          command: git checkout $CIRCLE_BRANCH
+
       - run:
           name: Run unit tests
           command: yarn test
+
       - persist_to_workspace:
           root: ~/project
           paths:
             - .
+
+  build_and_run_e2e_tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    resource_class: medium
+    steps:
+      - run:
+          name: Docker install
+          command: |
+            sudo apt-get update
+            sudo apt install docker.io -y
+            docker -v
+
+      - run:
+          name: Mongo container install
+          command: |
+            sudo docker run -d -p 27017:27017 --name mongo mongo
+
+      - run:
+          name: install git
+          command: sudo apt install git -y
+
+      - run:
+          name: install node
+          command: |
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+            source ~/.bashrc
+            nvm install v16 --lts
+            node -v
+            npm -v
+
+      - run:
+          name: checkout code
+          command: |
+            cd ~
+            ls ~/project
+            git clone "https://github.com/smiley-geek/nestjs-tests"
+
+      - run:
+          name: switch to current branch then run e2e tests
+          command: |
+            cd ~/nestjs-tests
+            git checkout $CIRCLE_BRANCH
+            npm i
+            npm run test:e2e
 
   deploy:
     executor: heroku/default
@@ -27,12 +80,17 @@ jobs:
           force: true
 
 workflows:
-  test:
+  steps:
     jobs:
-      - build_and_test
+      - build_and_run_unit_tests
+
+      - build_and_run_e2e_tests:
+          requires:
+            - build_and_run_unit_tests
+
       - deploy:
           requires:
-            - build_and_test
+            - build_and_run_e2e_tests
           filters:
             branches:
               only: main
