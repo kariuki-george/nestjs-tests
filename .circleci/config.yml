@@ -36,7 +36,7 @@ jobs:
       - run:
           name: Mongo container install
           command: |
-            sudo docker run -d -p 27017:27017 --name:mongo mongo
+            sudo docker run -d -p 27017:27017 --name mongo mongo
 
       - run:
           name: install git
