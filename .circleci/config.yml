@@ -4,18 +4,41 @@ orbs:
   heroku: circleci/heroku@1.2.6
 
 jobs:
-  build_and_test:
+  build_and_run_unit_tests:
     executor: node/default
     steps:
       - checkout
+
       - node/install-packages:
           pkg-manager: yarn
+
       - run:
           name: Run unit tests
           command: yarn test
+
+  build_and_run_e2e_tests:
+    executor: node/default
+    steps:
+      - run:
+          name: Docker install
+          command: |
+            sudo apt-get update
+            sudo apt install docker.io
+            docker -v
+
+      - run:
+          name: Mongo container install
+          command: |
+            sudo docker run -d -p 27017:27017 --name:mongo mongo
+
+      - checkout
+      - node/install-packages:
+          pkg-manager: yarn
+
       - run:
           name: Run e2e tests
           command: yarn test:e2e
+
       - persist_to_workspace:
           root: ~/project
           paths:
@@ -30,12 +53,17 @@ jobs:
           force: true
 
 workflows:
-  test:
+  steps:
     jobs:
-      - build_and_test
+      - build_and_run_unit_tests
+
+      - build_and_run_e2e_tests:
+          requires:
+            - build_and_run_unit_tests
+
       - deploy:
           requires:
-            - build_and_test
+            - build_and_run_e2e_tests
           filters:
             branches:
               only: main
