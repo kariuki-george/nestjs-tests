@@ -64,15 +64,10 @@ jobs:
             git clone "https://github.com/smiley-geek/nestjs-tests"
 
       - run:
-          name: switch to current branch
+          name: switch to current branch then run e2e tests
           command: |
             cd ~/nestjs-tests
             git checkout $CIRCLE_BRANCH
-
-      - run:
-          name: Run e2e tests
-          command: |
-
             npm i
             npm run test:e2e
 
