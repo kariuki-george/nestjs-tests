@@ -65,12 +65,14 @@ jobs:
 
       - run:
           name: switch to current branch
-          command: git checkout $CIRCLE_BRANCH
+          command: |
+            cd ~/nestjs-tests
+            git checkout $CIRCLE_BRANCH
 
       - run:
           name: Run e2e tests
           command: |
-            cd ~/nestjs-tests
+
             npm i
             npm run test:e2e
 
